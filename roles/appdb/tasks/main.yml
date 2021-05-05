@@ -1,0 +1,107 @@
+---
+# tasks file for App
+- name: Create Secret
+  community.kubernetes.k8s:
+     definition:
+        kind: Secret
+        apiVersion: v1
+        metadata:
+          name: '{{ ansible_operator_meta.name }}'
+          namespace: '{{ ansible_operator_meta.namespace }}'
+        type: Opaque
+        data:
+         root-username: "{{root_username}}"
+         root-password: "{{root_password}}"
+- name: Create ConfigMap 
+  community.kubernetes.k8s:
+     definition:
+        kind: ConfigMap
+        apiVersion: v1
+        metadata:
+          name: '{{ ansible_operator_meta.name }}'
+          namespace: '{{ ansible_operator_meta.namespace }}'
+        data:
+         database: admin
+         host: mongodb-service
+- name: Create MySQL Service
+  community.kubernetes.k8s:
+     definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+       name: mongo
+       namespace: '{{ ansible_operator_meta.namespace }}' 
+       labels:
+         app: mongo
+         tier: database
+      spec:
+        ports:
+         - port: 27017
+           targetPort: 27017
+        selector:       
+          app: mongo
+          tier: database  
+        clusterIP: None
+- name: Create Persistent Volume Claim
+  community.kubernetes.k8s:
+     definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: mongo-pv-claim
+        namespace: '{{ ansible_operator_meta.namespace }}' 
+        labels:
+         app: mongo
+         tier: database
+      spec:
+       accessModes:
+        - ReadWriteOnce   
+       resources:
+        requests:
+          storage: 1Gi
+- name: Create MySQL Deployment
+  community.kubernetes.k8s:
+     definition:
+       apiVersion: apps/v1
+       kind: Deployment
+       metadata:
+         name: '{{ ansible_operator_meta.name }}'
+         namespace: '{{ ansible_operator_meta.namespace }}'
+         labels:
+           app: mongo
+           tier: database
+       spec:
+        selector: 
+         matchLabels:
+           app: mongo
+           tier: database
+        template:
+         metadata:
+          labels: 
+            app: mongo
+            tier: database
+         spec:
+           containers:
+           - image: "docker.io/mongo:latest"
+             name: mongo
+             env:
+             - name: MONGO_INITDB_ROOT_PASSWORD 
+               valueFrom:
+                 secretKeyRef:
+                   name: '{{ ansible_operator_meta.name }}' 
+                   key: root-password   
+             - name: MONGO_INITDB_ROOT_USERNAME
+               valueFrom:
+                  configMapKeyRef:
+                    name: '{{ansible_operator_meta.name }}'
+                    key: database
+             ports:
+              - containerPort: 27017
+                name: mongo
+             volumeMounts:        
+              - name: mongo-persistent-storage
+                mountPath: /data/db 
+           volumes:
+             - name: mongo-persistent-storage 
+               persistentVolumeClaim:
+                claimName: mysql-pv-claim
