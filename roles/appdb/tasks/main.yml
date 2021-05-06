@@ -104,4 +104,4 @@
            volumes:
              - name: mongo-persistent-storage 
                persistentVolumeClaim:
-                claimName: mysql-pv-claim
+                claimName: mongo-pv-claim
