@@ -1,28 +1,5 @@
 ---
 # tasks file for App
-- name: Create app Secret
-  community.kubernetes.k8s:
-     definition:
-        kind: Secret
-        apiVersion: v1
-        metadata:
-          name: '{{ ansible_operator_meta.name }}'
-          namespace: '{{ ansible_operator_meta.namespace }}'
-        type: Opaque
-        data:
-         root-username: "{{root_username}}"
-         root-password: "{{root_password}}"
-- name: Create ConfigMap
-  community.kubernetes.k8s:
-     definition:
-        kind: ConfigMap
-        apiVersion: v1
-        metadata:
-          name: '{{ ansible_operator_meta.name }}'
-          namespace: '{{ ansible_operator_meta.namespace }}'
-        data:
-         database: admin
-         host: mongodb-service
 - name: Create springboot service
   community.kubernetes.k8s:
     definition:
