@@ -60,7 +60,7 @@
                   app: '{{ ansible_operator_meta.name }}'
             spec:
              containers:
-              - name: '{{ ansible_operator_meta.name }}'
+              - name: springboot
                 image: "docker.io/krishnakant002/spring-mongo-service:2.0"
                 env:
                  - name: MONGO_HOST
