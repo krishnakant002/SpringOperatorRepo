@@ -6,9 +6,8 @@
         kind: Secret
         apiVersion: v1
         metadata:
-          name: '{{ ansible_operator_meta.name }}'
+          name: mongo-secret
           namespace: '{{ ansible_operator_meta.namespace }}'
-        type: Opaque
         data:
          root-username: "{{root_username}}"
          root-password: "{{root_password}}"
@@ -18,7 +17,7 @@
         kind: ConfigMap
         apiVersion: v1
         metadata:
-          name: '{{ ansible_operator_meta.name }}'
+          name: mongo-conf
           namespace: '{{ ansible_operator_meta.namespace }}'
         data:
          database: admin
@@ -29,7 +28,7 @@
       apiVersion: v1
       kind: Service
       metadata:
-       name: mongo
+       name: mongodb-service
        namespace: '{{ ansible_operator_meta.namespace }}' 
        labels:
          app: mongo
@@ -65,7 +64,7 @@
        apiVersion: apps/v1
        kind: Deployment
        metadata:
-         name: '{{ ansible_operator_meta.name }}'
+         name: mongo
          namespace: '{{ ansible_operator_meta.namespace }}'
          labels:
            app: mongo
@@ -77,6 +76,7 @@
            tier: database
         template:
          metadata:
+          name: mongodb-service
           labels: 
             app: mongo
             tier: database
@@ -88,13 +88,13 @@
              - name: MONGO_INITDB_ROOT_PASSWORD 
                valueFrom:
                  secretKeyRef:
-                   name: '{{ ansible_operator_meta.name }}' 
+                   name: mongo-secret 
                    key: root-password   
              - name: MONGO_INITDB_ROOT_USERNAME
                valueFrom:
-                  configMapKeyRef:
-                    name: '{{ansible_operator_meta.name }}'
-                    key: database
+                  secretKeyRef:
+                    name: mongo-secret
+                    key: root-username
              ports:
               - containerPort: 27017
                 name: mongo
